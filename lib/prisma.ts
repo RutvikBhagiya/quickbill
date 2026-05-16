@@ -1,15 +1,12 @@
 import "dotenv/config";
 
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const connectionString = process.env.DATABASE_URL!;
 
-const adapter = new PrismaMariaDb({
-  host: "localhost",
-  user: "root",
-  password: "Rutvik&106",
-  database: "quickbill",
+const adapter = new PrismaPg({
+  connectionString,
 });
 
 const globalForPrisma = globalThis as unknown as {

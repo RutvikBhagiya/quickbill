@@ -27,6 +27,14 @@ export function proxy(req: NextRequest) {
     );
   }
 
+  // Prevent STAFF from accessing Admin-only routes
+  const adminRoutes = ["/dashboard/categories", "/dashboard/reports"];
+  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
+
+  if (isAdminRoute && decoded.role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   return NextResponse.next();
 }
 
