@@ -1,0 +1,210 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum OrderStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+}
+
+enum StockMovementType {
+  SALE
+  RESTOCK
+  CANCEL
+}
+
+enum AiFeatureType {
+  SALES_SUMMARY
+  RESTOCK_SUGGESTION
+  PRODUCT_DESCRIPTION
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  name           String
+  email          String           @unique
+  password       String
+  role           Role             @default(STAFF)
+  isActive       Boolean          @default(true)
+
+  orders         Order[]
+  stockMovements StockMovement[]
+  activityLogs   ActivityLog[]
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @default(now()) @updatedAt
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+
+  products    Product[]
+
+  createdAt   DateTime   @default(now())
+}
+
+model Product {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  sku              String            @unique
+  barcode          String?           @unique
+  description      String?
+
+  price            Decimal           @db.Decimal(10, 2)
+  costPrice        Decimal?          @db.Decimal(10, 2)
+
+  stockQty         Int               @default(0)
+  lowStockLimit    Int               @default(5)
+
+  imageUrl         String?
+
+  isActive         Boolean           @default(true)
+
+  categoryId       Int
+  category         Category          @relation(fields: [categoryId], references: [id])
+
+  orderItems       OrderItem[]
+  stockMovements   StockMovement[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
+}
+
+model Customer {
+  id          Int        @id @default(autoincrement())
+  name        String
+  phone       String?
+  email       String?
+  address     String?
+
+  orders      Order[]
+
+  createdAt   DateTime   @default(now())
+}
+
+model Order {
+  id              Int               @id @default(autoincrement())
+
+  orderNumber     String            @unique
+
+  customerId      Int?
+  customer        Customer?         @relation(fields: [customerId], references: [id])
+
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id])
+
+  subtotal        Decimal           @db.Decimal(10, 2)
+  tax             Decimal           @db.Decimal(10, 2)
+  discount        Decimal           @db.Decimal(10, 2)
+  totalAmount     Decimal           @db.Decimal(10, 2)
+
+  paymentMethod   PaymentMethod
+
+  status          OrderStatus       @default(CONFIRMED)
+
+  orderItems      OrderItem[]
+  invoice         Invoice?
+
+  createdAt       DateTime          @default(now())
+}
+
+model OrderItem {
+  id              Int               @id @default(autoincrement())
+
+  orderId         Int
+  order           Order             @relation(fields: [orderId], references: [id])
+
+  productId       Int
+  product         Product           @relation(fields: [productId], references: [id])
+
+  productName     String
+
+  quantity        Int
+
+  price           Decimal           @db.Decimal(10, 2)
+
+  total           Decimal           @db.Decimal(10, 2)
+}
+
+model StockMovement {
+  id              Int                  @id @default(autoincrement())
+
+  productId       Int
+  product         Product              @relation(fields: [productId], references: [id])
+
+  type            StockMovementType
+
+  quantity        Int
+
+  previousStock   Int
+  newStock        Int
+
+  note            String?
+
+  createdBy       Int
+  user            User                 @relation(fields: [createdBy], references: [id])
+
+  createdAt       DateTime             @default(now())
+}
+
+model Invoice {
+  id              Int         @id @default(autoincrement())
+
+  invoiceNumber   String      @unique
+
+  orderId         Int         @unique
+  order           Order       @relation(fields: [orderId], references: [id])
+
+  pdfUrl          String?
+
+  generatedAt     DateTime    @default(now())
+}
+
+model ActivityLog {
+  id              Int         @id @default(autoincrement())
+
+  userId          Int
+  user            User        @relation(fields: [userId], references: [id])
+
+  action          String
+
+  entityType      String
+  entityId        Int
+
+  createdAt       DateTime    @default(now())
+}
+
+model AiLog {
+  id              Int             @id @default(autoincrement())
+
+  featureType     AiFeatureType
+
+  prompt          String          @db.Text
+  response        String          @db.Text
+
+  createdAt       DateTime        @default(now())
+}
