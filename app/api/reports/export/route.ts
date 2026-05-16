@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
       const dateObj = new Date(o.createdAt);
       return [
         o.orderNumber,
-        dateObj.toISOString().slice(0, 10), // YYYY-MM-DD
-        dateObj.toISOString().slice(11, 19), // HH:MM:SS
+        `="${dateObj.toISOString().slice(0, 10)}"`, // Force text in Excel
+        `="${dateObj.toISOString().slice(11, 19)}"`, // Force text in Excel
         o.customer?.name || "Guest",
         o.customer?.phone || "",
         o.user.name,
@@ -75,7 +75,10 @@ export async function GET(request: NextRequest) {
 
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ...rows.map((row) => row.map((cell) => {
+        if (typeof cell === "string" && cell.startsWith("=")) return cell;
+        return `"${cell}"`;
+      }).join(",")),
     ].join("\n");
 
     return new Response(csvContent, {
