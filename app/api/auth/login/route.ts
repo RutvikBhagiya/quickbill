@@ -64,12 +64,12 @@ export async function POST(req: Request) {
       message: "Login successful",
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.log(error);
 
     return NextResponse.json(
       {
-        message: "Internal server error",
+        message: "Internal server error: " + (error?.message || String(error)),
       },
       {
         status: 500,
